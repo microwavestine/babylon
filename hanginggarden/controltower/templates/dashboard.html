@@ -1,0 +1,184 @@
+<!-- TODO: save current state to database, read current state from database -->
+<!doctype html>
+<html>
+    <head>
+        <title>Dashboard</title>
+        <style>
+            .grid-container {
+                display: flex;
+                flex-wrap: wrap;
+                justify-content: space-around;
+            }
+
+            .grid-item {
+                width: 30%; /* Adjust as needed */
+                margin: 10px;
+            }
+
+            .button {
+                display: block;
+                width: 100%;
+                padding: 10px;
+                text-align: center;
+                border: none;
+                border-radius: 5px;
+                cursor: pointer;
+                margin-bottom: 10px;
+            }
+
+            .button-on {
+                background-color: #28a745;
+                color: white;
+            }
+
+            .button-off {
+                background-color: #dc3545;
+                color: white;
+            }
+
+            .group-title {
+                text-align: center;
+                font-weight: bold;
+                margin-bottom: 10px;
+            }
+        </style>
+    </head>
+    <body>
+        <h1>Dashboard</h1>
+        <div class="grid-container">
+            <div class="grid-item">
+                <div class="group-title">
+                    LED Control <span id="led-status"></span>
+                </div>
+                <button
+                    class="button button-on"
+                    onclick="toggleStatus('led', 'on'); publishMessage('led', 1); "
+                >
+                    LED On
+                </button>
+                <button
+                    class="button button-off"
+                    onclick="toggleStatus('led', 'off'); publishMessage('led', 0);"
+                >
+                    LED Off
+                </button>
+            </div>
+            <div class="grid-item">
+                <div class="group-title">
+                    Pump Motor <span id="pump-status"></span>
+                </div>
+                <button
+                    class="button button-on"
+                    onclick="toggleStatus('pump', 'on'); publishMessage('pump', 1);"
+                >
+                    Pump On
+                </button>
+                <button
+                    class="button button-off"
+                    onclick="toggleStatus('pump', 'off'); publishMessage('pump', 0);"
+                >
+                    Pump Off
+                </button>
+            </div>
+            <div class="grid-item">
+                <div class="group-title">
+                    Fans <span id="fans-status"></span>
+                </div>
+                <button
+                    class="button button-on"
+                    onclick="toggleStatus('fans', 'on'); publishMessage('fans', 1);"
+                >
+                    Fans On
+                </button>
+                <button
+                    class="button button-off"
+                    onclick="toggleStatus('fans', 'off'); publishMessage('fans', 0);"
+                >
+                    Fans Off
+                </button>
+            </div>
+        </div>
+
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/paho-mqtt/1.1.0/paho-mqtt.min.js"></script>
+        <script>
+            function toggleStatus(device, status) {
+                document.getElementById(device + "-status").innerText =
+                    " (" +
+                    status.charAt(0).toUpperCase() +
+                    status.slice(1) +
+                    ")";
+            }
+            function publishMessage(device, status) {
+                // MQTT broker settings
+                var mqttBroker = "192.168.0.2";
+                var mqttPort = 1883;
+                //var mqttUsername = "your_mqtt_username"; // if authentication is enabled
+                //var mqttPassword = "your_mqtt_password"; // if authentication is enabled
+                var mqttTopic = "group3/" + device;
+
+                // Create an MQTT client instance
+                var client = new Paho.MQTT.Client(
+                    mqttBroker,
+                    mqttPort,
+                    "clientId",
+                );
+
+                // Set username and password if authentication is enabled
+                //client.username = mqttUsername;
+                //client.password = mqttPassword;
+
+                // Set callback handlers
+                client.onConnectionLost = onConnectionLost;
+                client.onMessageArrived = onMessageArrived;
+
+                // Connect to the MQTT broker
+                client.connect({
+                    onSuccess: onConnect,
+                    onFailure: onFailure,
+                });
+
+                // Function called when connected to MQTT broker
+                function onConnect() {
+                    console.log("Connected to MQTT broker");
+                    // Publish the message
+                    var message = new Paho.MQTT.Message(status);
+                    message.destinationName = mqttTopic;
+                    client.send(message);
+                    console.log(
+                        "Published message: " +
+                            status +
+                            " to topic: " +
+                            mqttTopic,
+                    );
+                    // Disconnect from the MQTT broker
+                    client.disconnect();
+                    console.log("Disconnected from MQTT broker");
+                }
+
+                // Function called when connection to MQTT broker is lost
+                function onConnectionLost(responseObject) {
+                    if (responseObject.errorCode !== 0) {
+                        console.log(
+                            "Connection lost: " + responseObject.errorMessage,
+                        );
+                    }
+                }
+
+                // Function called when a message arrives
+                function onMessageArrived(message) {
+                    console.log("Message arrived: " + message.payloadString);
+                }
+
+                // Function called on MQTT connection failure
+                function onFailure(invocationContext, errorCode, errorMessage) {
+                    console.log(
+                        "Failed to connect to MQTT broker: " +
+                            errorCode +
+                            " " +
+                            errorMessage,
+                    );
+                }
+            }
+        </script>
+    </body>
+</html>
