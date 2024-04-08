@@ -72,7 +72,7 @@ def read_setting_from_file(current_hour):
 
 # Function to publish the setting via MQTT
 def publish_setting(setting):
-    client = mqtt.Client(client_id="my_client", protocol=mqtt.MQTTv311, callback_api_version=1)
+    client = mqtt.Client(mqtt.CallbackAPIVersion.VERSION2)
     client.connect(mqtt_broker, mqtt_port)
     client.publish(mqtt_topic, setting)
     client.disconnect()
