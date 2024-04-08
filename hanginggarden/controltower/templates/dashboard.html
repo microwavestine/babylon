@@ -3,177 +3,214 @@
 <!doctype html>
 <html lang="en">
     <head>
-        <meta charset="UTF-8">
-        <meta name="description" content="Smart Farm Dashboard">
-        <meta name="keywords" content="smart farm">
-        <meta name="author" content="microwavestine">
-        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <meta charset="UTF-8" />
+        <meta name="description" content="Smart Farm Dashboard" />
+        <meta name="keywords" content="smart farm" />
+        <meta name="author" content="microwavestine" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
         <script src="https://cdnjs.cloudflare.com/ajax/libs/paho-mqtt/1.0.2/mqttws31.min.js"></script>
         <script>
-            window.addEventListener('DOMContentLoaded', function() {
-                // Generate 24-hour column dynamically for LED
-                var ledHourColumn = document.getElementById('led-24hour-column');
+            window.addEventListener("DOMContentLoaded", function () {
+                // Generate 24-hour column dynamically for LED with 1-hour interval
+                var ledHourColumn =
+                    document.getElementById("led-24hour-column");
                 var ledButtons = [];
-                generate24HourColumn(ledHourColumn, 'led', ledButtons);
-            
-                // Generate 24-hour column dynamically for Pump Motor
-                var pumpMotorHourColumn = document.getElementById('pumpmotor-24hour-column');
+                generate24HourColumn(ledHourColumn, "led", ledButtons);
+
+                // Generate 24-hour column dynamically for Pump Motor with 5-minute interval
+                var pumpMotorHourColumn = document.getElementById(
+                    "pumpmotor-24hour-column",
+                );
                 var pumpMotorButtons = [];
-                generate24HourColumn(pumpMotorHourColumn, 'pumpmotor', pumpMotorButtons);
-            
-                // Generate 24-hour column dynamically for Fan
-                var fanHourColumn = document.getElementById('fan-24hour-column');
+                generate24HourColumn(
+                    pumpMotorHourColumn,
+                    "pumpmotor",
+                    pumpMotorButtons,
+                    5,
+                );
+
+                // Generate 24-hour column dynamically for Fan with 1-hour interval
+                var fanHourColumn =
+                    document.getElementById("fan-24hour-column");
                 var fanButtons = [];
-                generate24HourColumn(fanHourColumn, 'fan', fanButtons);
-            
+                generate24HourColumn(fanHourColumn, "fan", fanButtons);
+
                 // Call the updateCycleFromFile function for each device
                 updateCycleFromFile("led", ledButtons);
+                //updateCycleFromFile("fan", fanButtons);
+                //updateCycleFromFile("pumpmotor", pumpMotorButtons);
             });
-            
-            // Function to generate 24-hour column
-            function generate24HourColumn(hourColumn, device, buttons) {
-                if (hourColumn) { // Check if the hourColumn element exists
-                    for (var i = 0; i < 24; i++) {
-                        var hour = i < 10 ? "0" + i : i;
-                        var hourText = hour + ":00";
-                        var hourDiv = document.createElement('div');
-                        hourDiv.classList.add('hour-row');
-            
-                        var hourLabel = document.createElement('span');
+
+            // Function to generate 24-hour column with specified interval
+            function generate24HourColumn(
+                hourColumn,
+                device,
+                buttons,
+                interval = 60,
+            ) {
+                if (hourColumn) {
+                    // Check if the hourColumn element exists
+                    for (var i = 0; i < 24 * (60 / interval); i++) {
+                        var hour = Math.floor((i * interval) / 60);
+                        var minute = (i * interval) % 60;
+                        var hourText =
+                            ("0" + hour).slice(-2) +
+                            ":" +
+                            ("0" + minute).slice(-2);
+                        var hourDiv = document.createElement("div");
+                        hourDiv.classList.add("hour-row");
+
+                        var hourLabel = document.createElement("span");
                         hourLabel.textContent = hourText;
-                        hourLabel.classList.add('hour-label');
+                        hourLabel.classList.add("hour-label");
                         hourDiv.appendChild(hourLabel);
-            
-                        var toggleButton = document.createElement('button');
+
+                        var toggleButton = document.createElement("button");
                         toggleButton.textContent = "OFF";
-                        toggleButton.classList.add('button', 'button-off', 'toggle-button');
+                        toggleButton.classList.add(
+                            "button",
+                            "button-off",
+                            "toggle-button",
+                        );
                         toggleButton.dataset.hour = hour;
-                        toggleButton.dataset.status = 'off';
-                        toggleButton.addEventListener('click', function () {
+                        toggleButton.dataset.minute = minute;
+                        toggleButton.dataset.status = "off";
+                        toggleButton.addEventListener("click", function () {
                             toggleHour(this, device);
                         });
                         hourDiv.appendChild(toggleButton);
                         buttons.push(toggleButton); // Add the button to the buttons array
-            
+
                         hourColumn.appendChild(hourDiv);
                     }
+                    // Add CSS style for scroll
+                    hourColumn.style.overflowY = "auto";
+                    hourColumn.style.height = "300px"; // Adjust the height as needed
                 } else {
-                    console.error(`Element with ID '${device}-24hour-column' not found.`);
+                    console.error(
+                        `Element with ID '${device}-24hour-column' not found.`,
+                    );
                 }
             }
-            
-                     // Function to toggle hour for respective device
-                     function toggleHour(button, device) {
-                         var hour = button.dataset.hour;
-                         var status = button.dataset.status;
-                         if (status === 'off') {
-                             // Turn hour on
-                             button.classList.remove('button-off');
-                             button.classList.add('button-on');
-                             button.textContent = "ON";
-                             button.dataset.status = 'on';
-                             // Perform action when turning hour on for respective device
-                             // Add your logic here
-                             console.log(device + ' hour ' + hour + ' turned ON');
-                         } else {
-                             // Turn hour off
-                             button.classList.remove('button-on');
-                             button.classList.add('button-off');
-                             button.textContent = "OFF";
-                             button.dataset.status = 'off';
-                             // Perform action when turning hour off for respective device
-                             // Add your logic here
-                             console.log(device + ' hour ' + hour + ' turned OFF');
-                         }
-                     }
-            
+
+            // Function to toggle hour for respective device
+            function toggleHour(button, device) {
+                var hour = button.dataset.hour;
+                var minute = button.dataset.minute;
+                var status = button.dataset.status;
+                if (status === "off") {
+                    // Turn hour on
+                    button.classList.remove("button-off");
+                    button.classList.add("button-on");
+                    button.textContent = "ON";
+                    button.dataset.status = "on";
+                    // Perform action when turning hour on for respective device
+                    // Add your logic here
+                    console.log(
+                        device + " hour " + hour + ":" + minute + " turned ON",
+                    );
+                } else {
+                    // Turn hour off
+                    button.classList.remove("button-on");
+                    button.classList.add("button-off");
+                    button.textContent = "OFF";
+                    button.dataset.status = "off";
+                    // Perform action when turning hour off for respective device
+                    // Add your logic here
+                    console.log(
+                        device + " hour " + hour + ":" + minute + " turned OFF",
+                    );
+                }
+            }
+
             function updateCycleFromFile(device, buttons) {
                 fetch(`/controltower/read_cycle_file/${device}/`)
-                    .then(response => {
+                    .then((response) => {
                         if (!response.ok) {
-                            throw new Error('Network response was not ok');
+                            throw new Error("Network response was not ok");
                         }
                         return response.text();
                     })
-                    .then(data => {
+                    .then((data) => {
                         console.log(data);
-                        var lines = data.split('\n');
+                        var lines = data.split("\n");
                         lines.forEach((line, index) => {
-                            console.log('Processing line:', line); // Log the line being processed
-                            var [hour, status] = line.trim().split(' ');
-                            console.log('Hour:', hour, 'Status:', status); // Log the hour and status
+                            console.log("Processing line:", line); // Log the line being processed
+                            var [hour, status] = line.trim().split(" ");
+                            console.log("Hour:", hour, "Status:", status); // Log the hour and status
                             var button = buttons[index];
-                            console.log('Button:', button); // Log the selected button
+                            console.log("Button:", button); // Log the selected button
                             if (button) {
                                 button.dataset.status = status.toLowerCase();
-                                if (status.toLowerCase() === 'on') {
-                                    button.classList.remove('button-off');
-                                    button.classList.add('button-on');
+                                if (status.toLowerCase() === "on") {
+                                    button.classList.remove("button-off");
+                                    button.classList.add("button-on");
                                     button.textContent = "ON";
                                 } else {
-                                    button.classList.remove('button-on');
-                                    button.classList.add('button-off');
+                                    button.classList.remove("button-on");
+                                    button.classList.add("button-off");
                                     button.textContent = "OFF";
                                 }
                             }
                         });
                     })
-                    .catch(error => console.error('Error reading file:', error));
+                    .catch((error) =>
+                        console.error("Error reading file:", error),
+                    );
             }
-            
+
             // Call the updateCycleFromFile function for each device
             updateCycleFromFile("led", ledButtons);
-                  
         </script>
         <title>Dashboard</title>
         <style>
             .grid-container {
-            display: flex;
-            flex-wrap: wrap;
-            justify-content: space-around;
+                display: flex;
+                flex-wrap: wrap;
+                justify-content: space-around;
             }
             .grid-item {
-            width: 30%; /* Adjust as needed */
-            margin: 10px;
+                width: 30%; /* Adjust as needed */
+                margin: 10px;
             }
             .navbar {
-            background-color: #007bff;
-            color: white;
-            padding: 10px;
-            text-align: center;
+                background-color: #007bff;
+                color: white;
+                padding: 10px;
+                text-align: center;
             }
             .button {
-            display: block;
-            width: 100%;
-            padding: 10px;
-            text-align: center;
-            border: none;
-            border-radius: 5px;
-            cursor: pointer;
-            margin-bottom: 10px;
+                display: block;
+                width: 100%;
+                padding: 10px;
+                text-align: center;
+                border: none;
+                border-radius: 5px;
+                cursor: pointer;
+                margin-bottom: 10px;
             }
             .button-on {
-            background-color: #28a745;
-            color: white;
+                background-color: #28a745;
+                color: white;
             }
             .button-off {
-            background-color: #dc3545;
-            color: white;
+                background-color: #dc3545;
+                color: white;
             }
             .group-title {
-            text-align: center;
-            font-weight: bold;
-            margin-bottom: 10px;
+                text-align: center;
+                font-weight: bold;
+                margin-bottom: 10px;
             }
             .hour-row {
-            display: flex;
-            align-items: center;
+                display: flex;
+                align-items: center;
             }
             .hour-label {
-            flex-grow: 1;
+                flex-grow: 1;
             }
             .toggle-button {
-            margin-left: 10px; /* Adjust as needed */
+                margin-left: 10px; /* Adjust as needed */
             }
         </style>
     </head>
@@ -190,19 +227,17 @@
                 <button
                     class="button button-on"
                     onclick="toggleStatus('led', 'on'); publishMessage('led', '1'); "
-                    >
-                LED On
+                >
+                    LED On
                 </button>
                 <button
                     class="button button-off"
                     onclick="toggleStatus('led', 'off'); publishMessage('led', '0');"
-                    >
-                LED Off
+                >
+                    LED Off
                 </button>
                 <p>Elapsed Time: <span id="led-time">0</span> seconds</p>
-                <div class="group-title">
-                    24-Hour Cycle
-                </div>
+                <div class="group-title">24-Hour Cycle</div>
                 <div id="led-24hour-column" class="24hour-column">
                     <!-- This will be populated dynamically -->
                 </div>
@@ -214,146 +249,147 @@
                 <button
                     class="button button-on"
                     onclick="toggleStatus('pumpmotor', 'on'); publishMessage('pumpmotor', '1');"
-                    >
-                Pump On
+                >
+                    Pump On
                 </button>
                 <button
                     class="button button-off"
                     onclick="toggleStatus('pumpmotor', 'off'); publishMessage('pumpmotor', '0');"
-                    >
-                Pump Off
+                >
+                    Pump Off
                 </button>
                 <p>Elapsed Time: <span id="pumpmotor-time">0</span> seconds</p>
-                <div class="group-title">
-                    24-Hour Cycle
-                </div>
+                <div class="group-title">24-Hour Cycle</div>
                 <div id="pumpmotor-24hour-column" class="24hour-column">
                     <!-- This will be populated dynamically -->
                 </div>
             </div>
             <div class="grid-item">
-                <div class="group-title">
-                    Fan <span id="fan-status"></span>
-                </div>
+                <div class="group-title">Fan <span id="fan-status"></span></div>
                 <button
                     class="button button-on"
                     onclick="toggleStatus('fan', 'on'); publishMessage('fan', '1');"
-                    >
-                Fan On
+                >
+                    Fan On
                 </button>
                 <button
                     class="button button-off"
                     onclick="toggleStatus('fan', 'off'); publishMessage('fan', '0');"
-                    >
-                Fan Off
+                >
+                    Fan Off
                 </button>
                 <p>Elapsed Time: <span id="fan-time">0</span> seconds</p>
-                <div class="group-title">
-                    24-Hour Cycle
-                </div>
+                <div class="group-title">24-Hour Cycle</div>
                 <div id="fan-24hour-column" class="24hour-column">
                     <!-- This will be populated dynamically -->
                 </div>
             </div>
         </div>
         <script>
-            var ledTimer = 0;
-            
             function toggleStatus(device, status) {
-            document.getElementById(device + "-status").innerText =
-                " (" +
-                status.charAt(0).toUpperCase() +
-                status.slice(1) +
-                ")";
-            if (status === 'on') {
-                startTimer(device);
-            } else {
-                stopTimer(device);
+                document.getElementById(device + "-status").innerText =
+                    " (" +
+                    status.charAt(0).toUpperCase() +
+                    status.slice(1) +
+                    ")";
+                if (status === "on") {
+                    startTimer(device);
+                } else {
+                    stopTimer(device);
+                }
             }
-            }
-            
+
+            var deviceTimers = {};
+
             function startTimer(device) {
-            var timerElement = document.getElementById(device + "-time");
-            var timer = setInterval(function () {
-                ledTimer++;
-                timerElement.innerText = ledTimer;
-            }, 1000);
-            timerElement.dataset.timer = timer;
+                var timerElement = document.getElementById(device + "-time");
+                deviceTimers[device] = setInterval(function () {
+                    var currentTime = parseInt(timerElement.innerText);
+                    timerElement.innerText = currentTime + 1;
+                }, 1000);
             }
-            
+
             function stopTimer(device) {
-            clearInterval(document.getElementById(device + "-time").dataset.timer);
-            ledTimer = 0;
-            document.getElementById(device + "-time").innerText = ledTimer;
+                clearInterval(deviceTimers[device]);
+                delete deviceTimers[device];
+                document.getElementById(device + "-time").innerText = 0;
             }
-                
         </script>
         <script>
             // Initialize MQTT client
             var mqttBroker = "localhost";
             var mqttPort = 8883;
             var mqttTopic = "";
-            
+
             var client = new Paho.MQTT.Client(mqttBroker, mqttPort, "clientId");
-            
+
             client.onConnectionLost = onConnectionLost;
             client.onMessageArrived = onMessageArrived;
-            
+
             function connectToBroker() {
-            if (!client.isConnected()) {
-                client.connect({
-                    onSuccess: onConnect,
-                    onFailure: onFailure
-                });
-            } else {
-                console.log("Already connected to MQTT broker");
+                if (!client.isConnected()) {
+                    client.connect({
+                        onSuccess: onConnect,
+                        onFailure: onFailure,
+                    });
+                } else {
+                    console.log("Already connected to MQTT broker");
+                }
             }
-            }
-            
+
             function disconnectFromBroker() {
                 client.disconnect();
             }
-            
+
             function onConnect() {
                 console.log("Connected to MQTT broker");
             }
-            
+
             function onConnectionLost(responseObject) {
                 if (responseObject.errorCode !== 0) {
-                    console.log("Connection lost: " + responseObject.errorMessage);
+                    console.log(
+                        "Connection lost: " + responseObject.errorMessage,
+                    );
                 }
             }
-            
+
             function onMessageArrived(message) {
                 console.log("Message arrived: " + message.payloadString);
             }
-            
+
             function onFailure(invocationContext, errorCode, errorMessage) {
-                console.log("Failed to connect to MQTT broker: " + errorCode + " " + errorMessage);
+                console.log(
+                    "Failed to connect to MQTT broker: " +
+                        errorCode +
+                        " " +
+                        errorMessage,
+                );
             }
-            
+
             function publishMessage(device, status) {
-            mqttTopic = "group3/" + device;
-            
-            // Check if the client is connected
-            if (!client.isConnected()) {
-                // If not connected, connect to the MQTT broker
-                connectToBroker();
-                // Wait for a short delay before publishing the message
-                setTimeout(function() {
+                mqttTopic = "group3/" + device;
+
+                // Check if the client is connected
+                if (!client.isConnected()) {
+                    // If not connected, connect to the MQTT broker
+                    connectToBroker();
+                    // Wait for a short delay before publishing the message
+                    setTimeout(function () {
+                        sendMessage(status);
+                    }, 500); // Adjust the delay time if needed
+                } else {
+                    // If already connected, directly send the message
                     sendMessage(status);
-                }, 500); // Adjust the delay time if needed
-            } else {
-                // If already connected, directly send the message
-                sendMessage(status);
+                }
             }
-            }
-            
+
             function sendMessage(status) {
                 var message = new Paho.MQTT.Message(status);
                 message.destinationName = mqttTopic;
                 client.send(message);
-                console.log("Published message: " + status + " to topic: " + mqttTopic);
+                console.log(
+                    "Published message: " + status + " to topic: " + mqttTopic,
+                );
             }
         </script>
     </body>
