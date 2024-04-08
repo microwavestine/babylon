@@ -37,91 +37,125 @@
 
                 // Call the updateCycleFromFile function for each device
                 updateCycleFromFile("led", ledButtons);
-                //updateCycleFromFile("fan", fanButtons);
-                //updateCycleFromFile("pumpmotor", pumpMotorButtons);
+                updateCycleFromFile("fan", fanButtons);
+                updateCycleFromFile("pumpmotor", pumpMotorButtons);
             });
 
-            // Function to generate 24-hour column with specified interval
-            function generate24HourColumn(
-                hourColumn,
-                device,
-                buttons,
-                interval = 60,
-            ) {
-                if (hourColumn) {
-                    // Check if the hourColumn element exists
-                    for (var i = 0; i < 24 * (60 / interval); i++) {
-                        var hour = Math.floor((i * interval) / 60);
-                        var minute = (i * interval) % 60;
-                        var hourText =
-                            ("0" + hour).slice(-2) +
-                            ":" +
-                            ("0" + minute).slice(-2);
-                        var hourDiv = document.createElement("div");
-                        hourDiv.classList.add("hour-row");
+            function generate24HourColumn(hourColumn, device, buttons, interval = 60) {
+    if (hourColumn) {
+        // Check if the hourColumn element exists
+        for (var i = 0; i < 24 * (60 / interval); i++) {
+            var hour = Math.floor((i * interval) / 60);
+            var minute = (i * interval) % 60;
+            var hourText = ("0" + hour).slice(-2) + ":" + ("0" + minute).slice(-2); // Format hour and minute with leading zeros
+            var hourDiv = document.createElement("div");
+            hourDiv.classList.add("hour-row");
 
-                        var hourLabel = document.createElement("span");
-                        hourLabel.textContent = hourText;
-                        hourLabel.classList.add("hour-label");
-                        hourDiv.appendChild(hourLabel);
+            var hourLabel = document.createElement("span");
+            hourLabel.textContent = hourText;
+            hourLabel.classList.add("hour-label");
+            hourDiv.appendChild(hourLabel);
 
-                        var toggleButton = document.createElement("button");
-                        toggleButton.textContent = "OFF";
-                        toggleButton.classList.add(
-                            "button",
-                            "button-off",
-                            "toggle-button",
-                        );
-                        toggleButton.dataset.hour = hour;
-                        toggleButton.dataset.minute = minute;
-                        toggleButton.dataset.status = "off";
-                        toggleButton.addEventListener("click", function () {
-                            toggleHour(this, device);
-                        });
-                        hourDiv.appendChild(toggleButton);
-                        buttons.push(toggleButton); // Add the button to the buttons array
+            var toggleButton = document.createElement("button");
+            toggleButton.textContent = "OFF";
+            toggleButton.classList.add("button", "button-off", "toggle-button");
+            toggleButton.dataset.hour = ("0" + hour).slice(-2); // Format hour with leading zero
+            toggleButton.dataset.minute = ("0" + minute).slice(-2); // Format minute with leading zero
+            toggleButton.dataset.status = "off";
+            toggleButton.addEventListener("click", function () {
+                toggleHour(this, device, minute); // Pass the minute value to the toggleHour function
+            });
+            hourDiv.appendChild(toggleButton);
+            buttons.push(toggleButton); // Add the button to the buttons array
 
-                        hourColumn.appendChild(hourDiv);
-                    }
-                    // Add CSS style for scroll
-                    hourColumn.style.overflowY = "auto";
-                    hourColumn.style.height = "300px"; // Adjust the height as needed
-                } else {
-                    console.error(
-                        `Element with ID '${device}-24hour-column' not found.`,
-                    );
-                }
+            hourColumn.appendChild(hourDiv);
+        }
+        // Add CSS style for scroll
+        hourColumn.style.overflowY = "auto";
+        hourColumn.style.height = "300px"; // Adjust the height as needed
+    } else {
+        console.error(`Element with ID '${device}-24hour-column' not found.`);
+    }
+}
+
+
+// Function to toggle hour for respective device
+function toggleHour(button, device, minute) {
+    console.log("debugging toggleHour")
+    console.log(button)
+    var hour = button.dataset.hour;
+    var minute = button.dataset.minute;
+    var status = button.dataset.status;
+    if (status === "off") {
+        // Turn hour on
+        button.classList.remove("button-off");
+        button.classList.add("button-on");
+        button.textContent = "ON";
+        button.dataset.status = "on";
+        // Perform action when turning hour on for respective device
+        // Add your logic here
+        console.log(
+            device + " hour " + hour + ":" + minute + " turned ON",
+        );
+    } else {
+        // Turn hour off
+        button.classList.remove("button-on");
+        button.classList.add("button-off");
+        button.textContent = "OFF";
+        button.dataset.status = "off";
+        // Perform action when turning hour off for respective device
+        // Add your logic here
+        console.log(
+            device + " hour " + hour + ":" + minute + " turned OFF",
+        );
+    }
+    // Send an AJAX request to update the schedule file
+    updateSchedule(device, hour, minute, status);
+}
+
+            function updateSchedule(device, hour, minute, status) {
+    fetch(`/controltower/update_schedule/${device}/`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': getCookie('csrftoken') // Get CSRF token from cookies
+        },
+        body: JSON.stringify({
+            hour: hour,
+            minute: minute,
+            status: status
+        })
+    })
+    .then(response => {
+        if (!response.ok) {
+            throw new Error('Network response was not ok');
+        }
+        return response.json();
+    })
+    .then(data => {
+        console.log(data);
+    })
+    .catch(error => {
+        console.error('Error updating schedule:', error);
+    });
+}
+
+// Function to get CSRF token from cookies
+function getCookie(name) {
+    var cookieValue = null;
+    if (document.cookie && document.cookie !== '') {
+        var cookies = document.cookie.split(';');
+        for (var i = 0; i < cookies.length; i++) {
+            var cookie = cookies[i].trim();
+            // Does this cookie string begin with the name we want?
+            if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                break;
             }
-
-            // Function to toggle hour for respective device
-            function toggleHour(button, device) {
-                var hour = button.dataset.hour;
-                var minute = button.dataset.minute;
-                var status = button.dataset.status;
-                if (status === "off") {
-                    // Turn hour on
-                    button.classList.remove("button-off");
-                    button.classList.add("button-on");
-                    button.textContent = "ON";
-                    button.dataset.status = "on";
-                    // Perform action when turning hour on for respective device
-                    // Add your logic here
-                    console.log(
-                        device + " hour " + hour + ":" + minute + " turned ON",
-                    );
-                } else {
-                    // Turn hour off
-                    button.classList.remove("button-on");
-                    button.classList.add("button-off");
-                    button.textContent = "OFF";
-                    button.dataset.status = "off";
-                    // Perform action when turning hour off for respective device
-                    // Add your logic here
-                    console.log(
-                        device + " hour " + hour + ":" + minute + " turned OFF",
-                    );
-                }
-            }
+        }
+    }
+    return cookieValue;
+}
 
             function updateCycleFromFile(device, buttons) {
                 fetch(`/controltower/read_cycle_file/${device}/`)
