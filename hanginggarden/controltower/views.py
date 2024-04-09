@@ -29,9 +29,7 @@ def update_schedule(request, device):
             hour = int(data.get('hour'))
             minute = int(data.get('minute'))
             status = data.get('status').upper()  # Ensure status is uppercase
-            print(hour)
-            print(minute)
-            print(status)
+
             # Adjust for the 5-minute interval for the pump motor schedule
             minute = minute // 5 * 5  # Round down to the nearest 5-minute interval
             
@@ -46,7 +44,7 @@ def update_schedule(request, device):
                     
                     if f"{hour:02d}" == schedule_hour and f"{minute:02d}" == schedule_minute:
                         new_status = 'ON' if status.upper() == 'OFF' else 'OFF'
-                        print(f"{hour:02d}:{minute:02d} {new_status}\n")
+                        # print(f"{hour:02d}:{minute:02d} {new_status}\n")
                         file.write(f"{hour:02d}:{minute:02d} {new_status}\n")
                     else:
                         file.write(line)

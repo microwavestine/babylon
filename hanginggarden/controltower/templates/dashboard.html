@@ -1,5 +1,4 @@
 <!-- TODO: save current state to database, read current state from database -->
-{% load static %}
 <!doctype html>
 <html lang="en">
     <head>
@@ -16,7 +15,7 @@
                     document.getElementById("led-24hour-column");
                 var ledButtons = [];
                 generate24HourColumn(ledHourColumn, "led", ledButtons);
-
+            
                 // Generate 24-hour column dynamically for Pump Motor with 5-minute interval
                 var pumpMotorHourColumn = document.getElementById(
                     "pumpmotor-24hour-column",
@@ -28,34 +27,46 @@
                     pumpMotorButtons,
                     5,
                 );
-
+            
                 // Generate 24-hour column dynamically for Fan with 1-hour interval
-                var fanHourColumn =
-                    document.getElementById("fan-24hour-column");
+                // var fanHourColumn =
+                //     document.getElementById("fan-24hour-column");
+                // var fanButtons = [];
+                // generate24HourColumn(fanHourColumn, "fan", fanButtons);
+            
+                // Generate 24-hour column dynamically for Fan with 5-minute interval
+                var fanHourColumn = document.getElementById(
+                    "fan-24hour-column",
+                );
                 var fanButtons = [];
-                generate24HourColumn(fanHourColumn, "fan", fanButtons);
-
+                generate24HourColumn(
+                    fanHourColumn,
+                    "fan",
+                    fanButtons,
+                    5,
+                );
+            
                 // Call the updateCycleFromFile function for each device
                 updateCycleFromFile("led", ledButtons);
                 updateCycleFromFile("fan", fanButtons);
                 updateCycleFromFile("pumpmotor", pumpMotorButtons);
             });
-
+            
             function generate24HourColumn(hourColumn, device, buttons, interval = 60) {
-    if (hourColumn) {
-        // Check if the hourColumn element exists
-        for (var i = 0; i < 24 * (60 / interval); i++) {
+            if (hourColumn) {
+            // Check if the hourColumn element exists
+            for (var i = 0; i < 24 * (60 / interval); i++) {
             var hour = Math.floor((i * interval) / 60);
             var minute = (i * interval) % 60;
             var hourText = ("0" + hour).slice(-2) + ":" + ("0" + minute).slice(-2); // Format hour and minute with leading zeros
             var hourDiv = document.createElement("div");
             hourDiv.classList.add("hour-row");
-
+            
             var hourLabel = document.createElement("span");
             hourLabel.textContent = hourText;
             hourLabel.classList.add("hour-label");
             hourDiv.appendChild(hourLabel);
-
+            
             var toggleButton = document.createElement("button");
             toggleButton.textContent = "OFF";
             toggleButton.classList.add("button", "button-off", "toggle-button");
@@ -67,96 +78,94 @@
             });
             hourDiv.appendChild(toggleButton);
             buttons.push(toggleButton); // Add the button to the buttons array
-
+            
             hourColumn.appendChild(hourDiv);
-        }
-        // Add CSS style for scroll
-        hourColumn.style.overflowY = "auto";
-        hourColumn.style.height = "300px"; // Adjust the height as needed
-    } else {
-        console.error(`Element with ID '${device}-24hour-column' not found.`);
-    }
-}
-
-
-// Function to toggle hour for respective device
-function toggleHour(button, device, minute) {
-    console.log("debugging toggleHour")
-    console.log(button)
-    var hour = button.dataset.hour;
-    var minute = button.dataset.minute;
-    var status = button.dataset.status;
-    if (status === "off") {
-        // Turn hour on
-        button.classList.remove("button-off");
-        button.classList.add("button-on");
-        button.textContent = "ON";
-        button.dataset.status = "on";
-        // Perform action when turning hour on for respective device
-        // Add your logic here
-        console.log(
+            }
+            // Add CSS style for scroll
+            hourColumn.style.overflowY = "auto";
+            hourColumn.style.height = "300px"; // Adjust the height as needed
+            } else {
+            console.error(`Element with ID '${device}-24hour-column' not found.`);
+            }
+            }
+            
+            
+            // Function to toggle hour for respective device
+            function toggleHour(button, device, minute) {
+            var hour = button.dataset.hour;
+            var minute = button.dataset.minute;
+            var status = button.dataset.status;
+            if (status === "off") {
+            // Turn hour on
+            button.classList.remove("button-off");
+            button.classList.add("button-on");
+            button.textContent = "ON";
+            button.dataset.status = "on";
+            // Perform action when turning hour on for respective device
+            // Add your logic here
+            console.log(
             device + " hour " + hour + ":" + minute + " turned ON",
-        );
-    } else {
-        // Turn hour off
-        button.classList.remove("button-on");
-        button.classList.add("button-off");
-        button.textContent = "OFF";
-        button.dataset.status = "off";
-        // Perform action when turning hour off for respective device
-        // Add your logic here
-        console.log(
+            );
+            } else {
+            // Turn hour off
+            button.classList.remove("button-on");
+            button.classList.add("button-off");
+            button.textContent = "OFF";
+            button.dataset.status = "off";
+            // Perform action when turning hour off for respective device
+            // Add your logic here
+            console.log(
             device + " hour " + hour + ":" + minute + " turned OFF",
-        );
-    }
-    // Send an AJAX request to update the schedule file
-    updateSchedule(device, hour, minute, status);
-}
-
+            );
+            }
+            // Send an AJAX request to update the schedule file
+            updateSchedule(device, hour, minute, status);
+            }
+            
             function updateSchedule(device, hour, minute, status) {
-    fetch(`/controltower/update_schedule/${device}/`, {
-        method: 'POST',
-        headers: {
+            fetch(`/controltower/update_schedule/${device}/`, {
+            method: 'POST',
+            headers: {
             'Content-Type': 'application/json',
             'X-CSRFToken': getCookie('csrftoken') // Get CSRF token from cookies
-        },
-        body: JSON.stringify({
+            },
+            body: JSON.stringify({
             hour: hour,
             minute: minute,
             status: status
-        })
-    })
-    .then(response => {
-        if (!response.ok) {
+            })
+            })
+            .then(response => {
+            if (!response.ok) {
             throw new Error('Network response was not ok');
-        }
-        return response.json();
-    })
-    .then(data => {
-        console.log(data);
-    })
-    .catch(error => {
-        console.error('Error updating schedule:', error);
-    });
-}
-
-// Function to get CSRF token from cookies
-function getCookie(name) {
-    var cookieValue = null;
-    if (document.cookie && document.cookie !== '') {
-        var cookies = document.cookie.split(';');
-        for (var i = 0; i < cookies.length; i++) {
+            }
+            return response.json();
+            })
+            .then(data => {
+            console.log(data);
+            })
+            .catch(error => {
+            console.error('Error updating schedule:', error);
+            });
+            }
+            
+            // Function to get CSRF token from cookies
+            function getCookie(name) {
+            var cookieValue = null;
+            if (document.cookie && document.cookie !== '') {
+            var cookies = document.cookie.split(';');
+            for (var i = 0; i < cookies.length; i++) {
             var cookie = cookies[i].trim();
             // Does this cookie string begin with the name we want?
             if (cookie.substring(0, name.length + 1) === (name + '=')) {
                 cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
                 break;
             }
-        }
-    }
-    return cookieValue;
-}
-
+            }
+            }
+            return cookieValue;
+            }
+            
             function updateCycleFromFile(device, buttons) {
                 fetch(`/controltower/read_cycle_file/${device}/`)
                     .then((response) => {
@@ -166,14 +175,10 @@ function getCookie(name) {
                         return response.text();
                     })
                     .then((data) => {
-                        console.log(data);
                         var lines = data.split("\n");
                         lines.forEach((line, index) => {
-                            console.log("Processing line:", line); // Log the line being processed
                             var [hour, status] = line.trim().split(" ");
-                            console.log("Hour:", hour, "Status:", status); // Log the hour and status
                             var button = buttons[index];
-                            console.log("Button:", button); // Log the selected button
                             if (button) {
                                 button.dataset.status = status.toLowerCase();
                                 if (status.toLowerCase() === "on") {
@@ -192,59 +197,59 @@ function getCookie(name) {
                         console.error("Error reading file:", error),
                     );
             }
-
+            
             // Call the updateCycleFromFile function for each device
             updateCycleFromFile("led", ledButtons);
         </script>
         <title>Dashboard</title>
         <style>
             .grid-container {
-                display: flex;
-                flex-wrap: wrap;
-                justify-content: space-around;
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: space-around;
             }
             .grid-item {
-                width: 30%; /* Adjust as needed */
-                margin: 10px;
+            width: 30%; /* Adjust as needed */
+            margin: 10px;
             }
             .navbar {
-                background-color: #007bff;
-                color: white;
-                padding: 10px;
-                text-align: center;
+            background-color: #007bff;
+            color: white;
+            padding: 10px;
+            text-align: center;
             }
             .button {
-                display: block;
-                width: 100%;
-                padding: 10px;
-                text-align: center;
-                border: none;
-                border-radius: 5px;
-                cursor: pointer;
-                margin-bottom: 10px;
+            display: block;
+            width: 100%;
+            padding: 10px;
+            text-align: center;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            margin-bottom: 10px;
             }
             .button-on {
-                background-color: #28a745;
-                color: white;
+            background-color: #28a745;
+            color: white;
             }
             .button-off {
-                background-color: #dc3545;
-                color: white;
+            background-color: #dc3545;
+            color: white;
             }
             .group-title {
-                text-align: center;
-                font-weight: bold;
-                margin-bottom: 10px;
+            text-align: center;
+            font-weight: bold;
+            margin-bottom: 10px;
             }
             .hour-row {
-                display: flex;
-                align-items: center;
+            display: flex;
+            align-items: center;
             }
             .hour-label {
-                flex-grow: 1;
+            flex-grow: 1;
             }
             .toggle-button {
-                margin-left: 10px; /* Adjust as needed */
+            margin-left: 10px; /* Adjust as needed */
             }
         </style>
     </head>
@@ -261,14 +266,14 @@ function getCookie(name) {
                 <button
                     class="button button-on"
                     onclick="toggleStatus('led', 'on'); publishMessage('led', '1'); "
-                >
-                    LED On
+                    >
+                LED On
                 </button>
                 <button
                     class="button button-off"
                     onclick="toggleStatus('led', 'off'); publishMessage('led', '0');"
-                >
-                    LED Off
+                    >
+                LED Off
                 </button>
                 <p>Elapsed Time: <span id="led-time">0</span> seconds</p>
                 <div class="group-title">24-Hour Cycle</div>
@@ -283,14 +288,14 @@ function getCookie(name) {
                 <button
                     class="button button-on"
                     onclick="toggleStatus('pumpmotor', 'on'); publishMessage('pumpmotor', '1');"
-                >
-                    Pump On
+                    >
+                Pump On
                 </button>
                 <button
                     class="button button-off"
                     onclick="toggleStatus('pumpmotor', 'off'); publishMessage('pumpmotor', '0');"
-                >
-                    Pump Off
+                    >
+                Pump Off
                 </button>
                 <p>Elapsed Time: <span id="pumpmotor-time">0</span> seconds</p>
                 <div class="group-title">24-Hour Cycle</div>
@@ -303,14 +308,14 @@ function getCookie(name) {
                 <button
                     class="button button-on"
                     onclick="toggleStatus('fan', 'on'); publishMessage('fan', '1');"
-                >
-                    Fan On
+                    >
+                Fan On
                 </button>
                 <button
                     class="button button-off"
                     onclick="toggleStatus('fan', 'off'); publishMessage('fan', '0');"
-                >
-                    Fan Off
+                    >
+                Fan Off
                 </button>
                 <p>Elapsed Time: <span id="fan-time">0</span> seconds</p>
                 <div class="group-title">24-Hour Cycle</div>
@@ -332,9 +337,9 @@ function getCookie(name) {
                     stopTimer(device);
                 }
             }
-
+            
             var deviceTimers = {};
-
+            
             function startTimer(device) {
                 var timerElement = document.getElementById(device + "-time");
                 deviceTimers[device] = setInterval(function () {
@@ -342,7 +347,7 @@ function getCookie(name) {
                     timerElement.innerText = currentTime + 1;
                 }, 1000);
             }
-
+            
             function stopTimer(device) {
                 clearInterval(deviceTimers[device]);
                 delete deviceTimers[device];
@@ -354,12 +359,12 @@ function getCookie(name) {
             var mqttBroker = "localhost";
             var mqttPort = 8883;
             var mqttTopic = "";
-
+            
             var client = new Paho.MQTT.Client(mqttBroker, mqttPort, "clientId");
-
+            
             client.onConnectionLost = onConnectionLost;
             client.onMessageArrived = onMessageArrived;
-
+            
             function connectToBroker() {
                 if (!client.isConnected()) {
                     client.connect({
@@ -370,15 +375,15 @@ function getCookie(name) {
                     console.log("Already connected to MQTT broker");
                 }
             }
-
+            
             function disconnectFromBroker() {
                 client.disconnect();
             }
-
+            
             function onConnect() {
                 console.log("Connected to MQTT broker");
             }
-
+            
             function onConnectionLost(responseObject) {
                 if (responseObject.errorCode !== 0) {
                     console.log(
@@ -386,11 +391,11 @@ function getCookie(name) {
                     );
                 }
             }
-
+            
             function onMessageArrived(message) {
                 console.log("Message arrived: " + message.payloadString);
             }
-
+            
             function onFailure(invocationContext, errorCode, errorMessage) {
                 console.log(
                     "Failed to connect to MQTT broker: " +
@@ -399,10 +404,10 @@ function getCookie(name) {
                         errorMessage,
                 );
             }
-
+            
             function publishMessage(device, status) {
                 mqttTopic = "group3/" + device;
-
+            
                 // Check if the client is connected
                 if (!client.isConnected()) {
                     // If not connected, connect to the MQTT broker
@@ -416,7 +421,7 @@ function getCookie(name) {
                     sendMessage(status);
                 }
             }
-
+            
             function sendMessage(status) {
                 var message = new Paho.MQTT.Message(status);
                 message.destinationName = mqttTopic;

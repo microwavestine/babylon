@@ -54,6 +54,7 @@ mqtt_broker = "localhost"
 mqtt_port = 1883
 mqtt_topic_hourly = "group3/led"
 mqtt_topic_5min = "group3/pumpmotor"
+mqtt_topic_5min_2 = "group3/fan"
 
 # Function to read the hourly setting from the text file
 def read_hourly_setting_from_file(current_hour):
@@ -69,6 +70,17 @@ def read_hourly_setting_from_file(current_hour):
 # Function to read the 5-minute setting from the text file
 def read_5min_setting_from_file(current_time):
     with open("pumpmotor_schedule.txt", "r") as file:
+        lines = file.readlines()
+        for line in lines:
+            line_time = line.split()[0]
+            if line_time == current_time:
+                setting = line.split()[1]
+                return setting
+    return None
+    
+# Function to read the 5-minute setting from the text file
+def read_5min_setting_from_file_2(current_time):
+    with open("fan_schedule.txt", "r") as file:
         lines = file.readlines()
         for line in lines:
             line_time = line.split()[0]
@@ -99,9 +111,13 @@ def five_min_job():
     current_time = datetime.now().strftime("%H:%M")
     print(current_time) # debugging purpose
     setting = read_5min_setting_from_file(current_time)
+    setting2 = read_5min_setting_from_file_2(current_time)
     if setting:
         publish_setting(mqtt_topic_5min, setting)
-        print(f"Published 5-minute setting '{setting}' for time {current_time}")
+        print(f"Published 5-minute setting for Pump Motor'{setting}' for time {current_time}")
+    if setting2:
+        publish_setting(mqtt_topic_5min_2, setting)
+        print(f"Published 5-minute setting for Fan'{setting}' for time {current_time}")
     else:
         print(f"No 5-minute setting found for time {current_time}")
 
