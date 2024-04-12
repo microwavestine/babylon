@@ -73,9 +73,54 @@ include_dir /etc/mosquitto/conf.d
 
 make sure to `sudo systemctl restart mosquitto`.
 
-### Installing Python packages
-
 ### Installing tmux to keep background process running
+`sudo apt-get install tmux`
+
+### Set up virtual env & install Python packages
+#### Django (tmux session 0)
+1. `tmux` to start a tmux session. Feel free to name it etc, but we will keep it simple and follow 0,1,2... numbering.
+2. `python -m venv ./myenv` to make a virtual python environment
+3. `source myenv/bin/activate` activates the virtual python environment. The virtual environment closes when shell is closed, and needs to be reactivated (that's why we will be using tmux).
+4. `pip install Django`
+5. You can now do `./manage.py runserver` to start Django server
+6. Ctrl+B then press d to exit the screen
+
+#### Scheduler (tmux session 1)
+1. `tmux` to start a tmux session. Feel free to name it etc, but we will keep it simple and follow 0,1,2... numbering.
+2. `python -m venv ./myenv2` to make a virtual python environment
+3. `source myenv2/bin/activate` activates the virtual python environment. The virtual environment closes when shell is closed, and needs to be reactivated (that's why we will be using tmux).
+4. `pip install schedule`
+5. `pip install time`
+6. `pip install paho-mqtt` at the time of writing, the version in use is 2.0.0
+6. Ctrl+B then press d to exit the screen
+
+### Installing Grafana
+1. `curl -sL https://packages.grafana.com/gpg.key | sudo apt-key add -`
+2. `echo "deb https://packages.grafana.com/oss/deb stable main" | sudo tee /etc/apt/sources.list.d/grafana.list`
+3. `sudo apt-get update`
+4. `sudo apt-get install -y grafana`
+5. `sudo systemctl enable grafana-server`
+6. `sudo systemctl start grafana-server`
+7. `sudo systemctl status grafana-server`
+8. Can access by entering 127.0.0.1:3000 in Raspberry pi, or [RaspberryPi_IPADDR]:3000 outside of raspberry pi.
+9. Login with username `admin`, password `admin`. You must reset the default password the first time you login.
+
+### Installing InfluxDB
+1. `sudo apt-get update && sudo apt-get install influxdb`
+2. `sudo apt install influxdb-client` to use influx CLI
+3. `influx`
+4. Make a db to to collect sensor infos
+```
+create database sensors
+
+create user telegrafuser with password "telegr@f"
+
+grant all on sensors to telegrafuser
+```
+
+
+### Installing Telegraf
+
 
 # Next Steps
 
@@ -85,4 +130,12 @@ make sure to `sudo systemctl restart mosquitto`.
 2. Use tools like MQTT explorer; fill in raspberry pi IP to inspect MQTT server, and check that signals sent from the MQTT explorer is processed correctly on Arduino side.
 3. If there are no issues, continue...
 
-## Let's start!
+## Recommended: make a Raspberry Pi monitoring dashboard on Grafana
+https://nwmichl.wordpress.com/2020/07/14/telegraf-influxdb-grafana-on-raspberrypi-from-scratch/
+
+## Working with InfluxDB
+sudo systemctl daemon-reload
+## Working with Grafana
+sudo systemctl daemon-reload
+## Working with Telegraf
+sudo systemctl daemon-reload
