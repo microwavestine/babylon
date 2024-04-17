@@ -120,7 +120,28 @@ grant all on sensors to telegrafuser
 
 
 ### Installing Telegraf
+```
+[[outputs.influxdb]]
+   urls = ["http://127.0.0.1:8086"]
+   database = "telegraf"
+   username = ""
+   password = ""
+   [outputs.influxdb.tagpass]
+     topic = ["sensor/ds18b20", "sensor/dht22", "sensor/dht22_humidity"]
+[[inputs.mqtt_consumer]]
+   servers = ["tcp://localhost:1883"]
+   topics = ["sensor/ds18b20", "sensor/dht22", "sensor/dht22_humidity", "sensor/liquid_level"]
+   data_type = "float"
+   data_format = "value"
+[[outputs.websocket]]
+  url = "ws://localhost:3000/api/live/push/live_sensor_data"
+  data_format = "influx"
+  [outputs.websocket.headers]
+    Authorization = "Bearer XXX"
+  [[outputs.websocket.tagpass]]
+    topic = "sensor/liquid_level"
 
+```
 
 # Next Steps
 

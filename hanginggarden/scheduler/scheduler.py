@@ -63,7 +63,11 @@ def read_hourly_setting_from_file(current_hour):
         for line in lines:
             line_hour = int(line.split(":")[0])
             if line_hour == current_hour:
+                print("Debugging LED Schedule...")
+                print("line_hour: " + line_hour)
+                print("current_hour: " + current_hour)
                 setting = line.split()[1]
+                print("setting: " + setting)
                 return setting
     return None
 
@@ -74,7 +78,11 @@ def read_5min_setting_from_file(current_time):
         for line in lines:
             line_time = line.split()[0]
             if line_time == current_time:
+                print("Deubgging Pump Motor Schedule...")
+                print("line_time: " + line_time)
+                print("current_time: " + current_time) 
                 setting = line.split()[1]
+                print("setting: " + setting)
                 return setting
     return None
     
@@ -85,7 +93,11 @@ def read_5min_setting_from_file_2(current_time):
         for line in lines:
             line_time = line.split()[0]
             if line_time == current_time:
+                print("Deubgging Fan Schedule...")
+                print("line_time: " + line_time)
+                print("current_time: " + current_time) 
                 setting = line.split()[1]
+                print("setting: " + setting)
                 return setting
     return None
 
