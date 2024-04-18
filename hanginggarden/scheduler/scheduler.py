@@ -63,11 +63,7 @@ def read_hourly_setting_from_file(current_hour):
         for line in lines:
             line_hour = int(line.split(":")[0])
             if line_hour == current_hour:
-                print("Debugging LED Schedule...")
-                print("line_hour: " + line_hour)
-                print("current_hour: " + current_hour)
                 setting = line.split()[1]
-                print("setting: " + setting)
                 return setting
     return None
 
@@ -78,11 +74,7 @@ def read_5min_setting_from_file(current_time):
         for line in lines:
             line_time = line.split()[0]
             if line_time == current_time:
-                print("Deubgging Pump Motor Schedule...")
-                print("line_time: " + line_time)
-                print("current_time: " + current_time) 
                 setting = line.split()[1]
-                print("setting: " + setting)
                 return setting
     return None
     
@@ -93,11 +85,7 @@ def read_5min_setting_from_file_2(current_time):
         for line in lines:
             line_time = line.split()[0]
             if line_time == current_time:
-                print("Deubgging Fan Schedule...")
-                print("line_time: " + line_time)
-                print("current_time: " + current_time) 
                 setting = line.split()[1]
-                print("setting: " + setting)
                 return setting
     return None
 
@@ -128,8 +116,8 @@ def five_min_job():
         publish_setting(mqtt_topic_5min, setting)
         print(f"Published 5-minute setting for Pump Motor'{setting}' for time {current_time}")
     if setting2:
-        publish_setting(mqtt_topic_5min_2, setting)
-        print(f"Published 5-minute setting for Fan'{setting}' for time {current_time}")
+        publish_setting(mqtt_topic_5min_2, setting2)
+        print(f"Published 5-minute setting for Fan'{setting2}' for time {current_time}")
     else:
         print(f"No 5-minute setting found for time {current_time}")
 
