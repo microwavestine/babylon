@@ -53,7 +53,9 @@ Then click on the login link to link raspberry pi to your account.
 
 https://randomnerdtutorials.com/how-to-install-mosquitto-broker-on-raspberry-pi/
 
-Follow through the first 1~6 steps. Then in /etc/mosquitto, set mosquitto.conf as follows
+Follow through the first 1~6 steps. 
+
+Then in /etc/mosquitto, set mosquitto.conf as follows (`cd /etc/mosquitto` then `sudo vim mosquitto.conf` or `sudo nano mosquitto.conf`).
 
 ```
 pid_file /run/mosquitto/mosquitto.pid
@@ -121,7 +123,7 @@ Using tmux keeps terminal sessions open in the background even if the window is 
 5. `pip install paho-mqtt` at the time of writing, the version in use is 2.0.0
 6. Ctrl+B then press d to exit the screen
 
-### Installing Grafana
+### 1. Installing Grafana
 1. `curl -sL https://packages.grafana.com/gpg.key | sudo apt-key add -`
 2. `echo "deb https://packages.grafana.com/oss/deb stable main" | sudo tee /etc/apt/sources.list.d/grafana.list`
 3. `sudo apt-get update`
@@ -132,7 +134,7 @@ Using tmux keeps terminal sessions open in the background even if the window is 
 8. Can access by entering 127.0.0.1:3000 in Raspberry pi, or [RaspberryPi_IPADDR]:3000 outside of raspberry pi.
 9. Login with username `admin`, password `admin`. You must reset the default password the first time you login.
 
-### Installing InfluxDB
+### 2. Installing InfluxDB
 1. `sudo apt-get update && sudo apt-get install influxdb`
 2. `sudo apt install influxdb-client` to use influx CLI
 3. `influx`
@@ -146,7 +148,7 @@ grant all on sensors to telegrafuser
 ```
 
 
-### Installing Telegraf
+### 3. Installing Telegraf
 https://docs.influxdata.com/telegraf/v1/install/
 
 Edit telegraf.conf like below. Websocket plugin is optional.
