@@ -192,6 +192,11 @@ If you make changes to config, restart the service like
 
 # Next Steps
 
+## Set up ESP32 Camera
+https://blog.naver.com/no1_devicemart/223018835439 (Korean)
+
+After setting up the camera, you can access the streams on Raspberry Pi with the IP address on serial monitor.
+
 ## Sanity check
 
 1. Upload Arduino sketch
