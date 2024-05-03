@@ -11,3 +11,12 @@ class DataPoint(models.Model):
 
     def __str__(self):
         return self.name
+
+class SavedData(models.Model):
+    date = models.DateField()
+    text = models.TextField()
+    button_choice = models.CharField(max_length=100)
+    images = models.ManyToManyField('Image', blank=True)
+
+class Image(models.Model):
+    image = models.ImageField(upload_to='images/')
