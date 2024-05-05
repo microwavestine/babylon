@@ -15,64 +15,42 @@
   <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.2.1/js/bootstrap.min.js" integrity="sha384-B0UglyR+jN6CkvvICOB2joaf5I4l3gm9GU6Hc1og6Ls7i6U/mkkaduKaBhlAXv9k" crossorigin="anonymous"></script>
         <script>
         
-            window.addEventListener("DOMContentLoaded", function () {
-                // Generate 24-hour column dynamically for LED with 1-hour interval
-                var ledHourColumn =
-                    document.getElementById("led-24hour-column");
-                var ledButtons = [];
-                generate24HourColumn(ledHourColumn, "led", ledButtons);
+        window.addEventListener("DOMContentLoaded", function () {
+    // Generate 24-hour column dynamically for LED with 1-hour interval
+    var ledHourColumn = document.getElementById("led-24hour-column");
+    var ledButtons = generate24HourColumn(ledHourColumn, "led", []);
+
+    // Call the updateCycleFromFile function for LED
+    updateCycleFromFile("led", ledButtons);
+
+    // Generate 24-hour column dynamically for Pump Motor with 5-minute interval
+    var pumpMotorHourColumn = document.getElementById("pumpmotor-24hour-column");
+    var pumpMotorButtons = generate24HourColumn(pumpMotorHourColumn, "pumpmotor", [], 5);
+
+    // Generate 24-hour column dynamically for Fan with 5-minute interval
+    var fanHourColumn = document.getElementById("fan-24hour-column");
+    var fanButtons = generate24HourColumn(fanHourColumn, "fan", [], 5);
+
+    // Call the updateCycleFromFile function for other devices
+    updateCycleFromFile("fan", fanButtons);
+    updateCycleFromFile("pumpmotor", pumpMotorButtons);
+});
             
-                // Generate 24-hour column dynamically for Pump Motor with 5-minute interval
-                var pumpMotorHourColumn = document.getElementById(
-                    "pumpmotor-24hour-column",
-                );
-                var pumpMotorButtons = [];
-                generate24HourColumn(
-                    pumpMotorHourColumn,
-                    "pumpmotor",
-                    pumpMotorButtons,
-                    5,
-                );
-            
-                // Generate 24-hour column dynamically for Fan with 1-hour interval
-                // var fanHourColumn =
-                //     document.getElementById("fan-24hour-column");
-                // var fanButtons = [];
-                // generate24HourColumn(fanHourColumn, "fan", fanButtons);
-            
-                // Generate 24-hour column dynamically for Fan with 5-minute interval
-                var fanHourColumn = document.getElementById(
-                    "fan-24hour-column",
-                );
-                var fanButtons = [];
-                generate24HourColumn(
-                    fanHourColumn,
-                    "fan",
-                    fanButtons,
-                    5,
-                );
-            
-                // Call the updateCycleFromFile function for each device
-                updateCycleFromFile("led", ledButtons);
-                updateCycleFromFile("fan", fanButtons);
-                updateCycleFromFile("pumpmotor", pumpMotorButtons);
-            });
-            
-            function generate24HourColumn(hourColumn, device, buttons, interval = 60) {
-            if (hourColumn) {
-            // Check if the hourColumn element exists
-            for (var i = 0; i < 24 * (60 / interval); i++) {
+            function generate24HourColumn(hourColumn, device, buttons = [], interval = 60) {
+    if (hourColumn) {
+        // Check if the hourColumn element exists
+        for (var i = 0; i < 24 * (60 / interval); i++) {
             var hour = Math.floor((i * interval) / 60);
             var minute = (i * interval) % 60;
             var hourText = ("0" + hour).slice(-2) + ":" + ("0" + minute).slice(-2); // Format hour and minute with leading zeros
             var hourDiv = document.createElement("div");
             hourDiv.classList.add("hour-row");
-            
+
             var hourLabel = document.createElement("span");
             hourLabel.textContent = hourText;
             hourLabel.classList.add("hour-label");
             hourDiv.appendChild(hourLabel);
-            
+
             var toggleButton = document.createElement("button");
             toggleButton.textContent = "OFF";
             toggleButton.classList.add("button", "button-off", "toggle-button");
@@ -84,16 +62,17 @@
             });
             hourDiv.appendChild(toggleButton);
             buttons.push(toggleButton); // Add the button to the buttons array
-            
+
             hourColumn.appendChild(hourDiv);
-            }
-            // Add CSS style for scroll
-            hourColumn.style.overflowY = "auto";
-            hourColumn.style.height = "300px"; // Adjust the height as needed
-            } else {
-            console.error(`Element with ID '${device}-24hour-column' not found.`);
-            }
-            }
+        }
+        // Add CSS style for scroll
+        hourColumn.style.overflowY = "auto";
+        hourColumn.style.height = "300px"; // Adjust the height as needed
+    } else {
+        console.error(`Element with ID '${device}-24hour-column' not found.`);
+    }
+    return buttons;
+}
             
             
             // Function to toggle hour for respective device
@@ -203,9 +182,6 @@
                         console.error("Error reading file:", error),
                     );
             }
-            
-            // Call the updateCycleFromFile function for each device
-            updateCycleFromFile("led", ledButtons);
         </script>
         <title>Dashboard</title>
         <style>

@@ -17,7 +17,7 @@ import os
 BASE_DIR = Path(__file__).resolve().parent.parent
 
 MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
-MEDIA_URL = 'controltower/media/'
+MEDIA_URL = 'media/'
 
 
 # Quick-start development settings - unsuitable for production
