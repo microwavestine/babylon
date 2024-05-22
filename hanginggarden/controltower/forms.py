@@ -9,6 +9,11 @@ class SaveDataForm(forms.Form):
         widget=forms.DateInput(attrs={'class': 'form-control datetimepicker-input'}),
         initial=timezone.now()
     )
-    text = forms.CharField(widget=forms.Textarea)
+    text = forms.CharField(widget=forms.Textarea, required=False)
     button_choice = models.CharField(max_length=100, blank=True)
     images = MultiFileField(widget=MultiFileInput, required=False)
+
+    def __init__(self, *args, instance=None, **kwargs):
+        super().__init__(*args, **kwargs)
+        if instance:
+            self.fields['text'].initial = instance.text

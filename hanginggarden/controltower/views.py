@@ -7,7 +7,9 @@ from .models import SavedData, Image
 from django.views.decorators.csrf import csrf_exempt
 import json
 import datetime
+import logging
 
+logger = logging.getLogger(__name__)
 
 # Create your views here.
 def dashboard(request):
@@ -16,52 +18,81 @@ def dashboard(request):
 
 def farmdiary(request, saved_data_id=None):
     if saved_data_id:
-        # Viewing an existing SavedData instance
+        # Viewing and updating an existing SavedData instance
         saved_data = get_object_or_404(SavedData, id=saved_data_id)
         images = saved_data.images.all()
+
+        if request.method == 'POST':
+            form = SaveDataForm(request.POST, request.FILES, instance=saved_data)
+            if form.is_valid():
+                saved_data.text = form.cleaned_data['text']
+                saved_data.button_choice = request.POST.get('button_choice')
+                saved_data.save()
+
+                # Handle new images
+                images = request.FILES.getlist('images')
+                for image in images:
+                    img = Image.objects.create(image=image)
+                    saved_data.images.add(img)
+
+                return redirect('farmdiary', saved_data_id=saved_data.id)
+        else:
+            form = SaveDataForm(instance=saved_data)
+
         context = {
-            'form': None,
+            'form': form,
             'saved_data': saved_data,
             'images': images,
         }
         return render(request, 'farmdiary.html', context)
     else:
+        # Creating or updating a SavedData instance
+        saved_data = None
         if request.method == 'POST':
             form = SaveDataForm(request.POST, request.FILES)
             if form.is_valid():
                 date = form.cleaned_data['date']
                 text = form.cleaned_data['text']
                 button_choice = request.POST.get('button_choice')
-                saved_data = SavedData.objects.create(date=date, text=text, button_choice=button_choice)
-                print(f"Saved data instance: {saved_data}")
-                print(f"Saved data text: {saved_data.text}")
-                print(f"Button choice: {button_choice}")
+
+                # Check if a SavedData instance already exists for the given date and button_choice
+                try:
+                    saved_data = SavedData.objects.get(date=date, button_choice=button_choice)
+                except SavedData.DoesNotExist:
+                    # Create a new SavedData instance
+                    saved_data = SavedData.objects.create(date=date, text=text, button_choice=button_choice)
+
+                # Update the SavedData instance with the new text
+                saved_data.text = text
+
+                # Handle new images
                 images = request.FILES.getlist('images')
-                print(f"Images list: {images}")
                 for image in images:
                     img = Image.objects.create(image=image)
                     saved_data.images.add(img)
-                    print(f"Saved image: {img}")
-                return redirect('farmdiary')
+
+                saved_data.save()
+
+                return redirect('farmdiary', saved_data_id=saved_data.id)
         else:
             form = SaveDataForm()
         return render(request, 'farmdiary.html', {'form': form})
     
-
 def get_images_for_date(request):
     if request.method == 'GET':
         date_str = request.GET.get('date')
-        if date_str:
+        button_choice = request.GET.get('button_choice')
+        if date_str and button_choice:
             try:
                 date = datetime.datetime.strptime(date_str, '%Y-%m-%d').date()
-                saved_data = SavedData.objects.filter(date=date)
+                saved_data = SavedData.objects.filter(date=date, button_choice=button_choice)
                 image_urls = [image.image.url for data in saved_data for image in data.images.all()]
-                print(image_urls)
-                return JsonResponse({'success': True, 'image_urls': image_urls})
+                text_data = [data.text for data in saved_data]
+                return JsonResponse({'success': True, 'image_urls': image_urls, 'text_data': text_data})
             except Exception as e:
                 return JsonResponse({'success': False, 'error': str(e)})
         else:
-            return JsonResponse({'success': False, 'error': 'No date provided'})
+            return JsonResponse({'success': False, 'error': 'No date or button choice provided'})
     else:
         return JsonResponse({'success': False, 'error': 'Invalid request method'})
     

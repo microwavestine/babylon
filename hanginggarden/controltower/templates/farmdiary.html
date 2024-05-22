@@ -6,6 +6,31 @@
   <title>Farm Diary</title>
 
   <style>
+    .form-container {
+        display: flex;
+        flex-direction: column;
+        width: 50%;
+    }
+
+    .image-container {
+        width: 50%;
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        grid-gap: 10px;
+        overflow: auto;
+        max-height: 500px;
+    }
+
+    .image-container img {
+        max-width: 100%;
+        height: auto;
+    }
+
+    .container {
+        display: flex;
+        justify-content: space-between;
+    }
+
     .navbar {
       background-color: #007bff;
       color: white;
@@ -47,55 +72,44 @@
     </div>
   </nav>
   <div class="container">
-    <h1>Farm Diary</h1>
-    {% if saved_data %}
-      <h2>Saved Data</h2>
-      <p>Date: {{ saved_data.date }}</p>
-      <p>Text: {{ saved_data.text }}</p>
-      <p>Button Choice: {{ saved_data.button_choice }}</p>
-
-      <h3>Images</h3>
-      {% if images %}
-        {% for image in images %}
-          <img src="{{ image.image.url }}" alt="{{ image.image.name }}" style="max-width: 300px;">
-        {% endfor %}
-      {% else %}
-        <p>No images uploaded.</p>
-      {% endif %}
-    {% else %}
-    <form method="post" enctype="multipart/form-data">
-      {% csrf_token %}
-      <div class="form-group">
-        <div class="input-group date" id="datetimepicker1" data-target-input="nearest">
+    
+    <div class="form-container">
+      <h1>Farm Diary</h1>
+      <form method="post" enctype="multipart/form-data">
+        {% csrf_token %}
+        <div class="form-group">
+          <div class="input-group date" id="datetimepicker1" data-target-input="nearest">
             {{ form.date.errors }}
             {{ form.date }}
             <div class="input-group-append" data-target="#datetimepicker1" data-toggle="datetimepicker">
-                <div class="input-group-text"><i class="fa fa-calendar"></i></div>
+              <div class="input-group-text"><i class="fa fa-calendar"></i></div>
             </div>
+          </div>
         </div>
+        <div class="form-group">
+          {{ form.text.errors }}
+          {{ form.text }}
+        </div>
+        <div class="form-group">
+          {{ form.images }}
+        </div>
+        <input type="hidden" name="button_choice" value="" id="button_choice_input">
+        <div class="button-group">
+          <button type="button" class="btn btn-outline-success mb-2 choice-btn" id="btn-crispiano" onclick="setButtonChoice('Crispiano')">크리스피아노</button>
+          <button type="button" class="btn btn-outline-success mb-2 choice-btn" id="btn-izabel" onclick="setButtonChoice('Izabel')">이자벨</button>
+          <button type="button" class="btn btn-outline-success mb-2 choice-btn" id="btn-carapia" onclick="setButtonChoice('Carapia')">카라피아</button>
+          <button type="button" class="btn btn-outline-success mb-2 choice-btn" id="btn-ginseng" onclick="setButtonChoice('Ginseng')">인삼</button>
+          <button type="button" class="btn btn-outline-secondary mb-2 choice-btn" id="btn-facility" onclick="setButtonChoice('Facility')">시설</button>
+          <button type="submit" class="btn btn-outline-primary mb-2">Save</button>
+        </div>
+      </form>
     </div>
-      <div class="form-group">
-        {{ form.text }}
-      </div>
-      <div class="form-group">
-        {{ form.images }}
-      </div>
-      <input type="hidden" name="button_choice" value="" id="button_choice_input">
-      <div class="button-group">
-        <button type="button" class="btn btn-outline-success mb-2 choice-btn" id="btn-crispiano" onclick="setButtonChoice('Crispiano')">Crispiano</button>
-        <button type="button" class="btn btn-outline-success mb-2 choice-btn" id="btn-izabel" onclick="setButtonChoice('Izabel')">Izabel</button>
-        <button type="button" class="btn btn-outline-success mb-2 choice-btn" id="btn-carapia" onclick="setButtonChoice('Carapia')">Carapia</button>
-        <button type="button" class="btn btn-outline-success mb-2 choice-btn" id="btn-ginseng" onclick="setButtonChoice('Ginseng')">Ginseng</button>
-        <button type="submit" class="btn btn-outline-primary mb-2">Save</button>
-    </div>
-    </form>
-    {% endif %}
-    {% for saved_data in saved_data_list %}
-  <a href="{% url 'view_saved_data' saved_data.id %}">{{ saved_data.date }}</a>
-{% endfor %}
+  <div class="image-container">
     <div class="image-slideshow">
       <!-- Container for the image slideshow -->
     </div>
+  </div>
+
   </div>
     <!-- Bootstrap 4 -->
     <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.2.1/css/bootstrap.min.css" integrity="sha384-GJzZqFGwb1QTTN6wy59ffF1BuGJpLSa9DkKMp0DgiMDm4iYMj70gZWKYbI706tWS" crossorigin="anonymous">
@@ -119,15 +133,18 @@ $(function () {
   $("#datetimepicker1").datetimepicker({
     format: 'YYYY-MM-DD',
   });
-  $("#datetimepicker1").on("change.datetimepicker", function (e) {
-    var selectedDate = moment(e.date).format('YYYY-MM-DD');
+
+  // Function to handle button click and make AJAX request
+  function handleButtonClick(buttonChoice) {
+    var selectedDate = $("#datetimepicker1").datetimepicker('viewDate').format('YYYY-MM-DD');
     var currentUrl = window.location.href;
     var baseUrl = currentUrl.split('/controltower/')[0];
 
     $.ajax({
       url: '{% url "get_images_for_date" %}',
       data: {
-        'date': selectedDate
+        'date': selectedDate,
+        'button_choice': buttonChoice
       },
       dataType: 'json',
       success: function(data) {
@@ -141,8 +158,16 @@ $(function () {
               console.log(fullUrl)
               imageSlideshow.append('<img src="' + fullUrl + '" style="max-width: 300px; margin: 10px;">');
             });
+            // Populate the text field with the returned text data
+            var textField = $('textarea[name="{{ form.text.name }}"]');
+            if (data.text_data.length > 0) {
+              textField.val(data.text_data[0]);
+            } else {
+              textField.val('');
+            }
           } else {
-            imageSlideshow.append('<p>No images for the selected date.</p>');
+            imageSlideshow.append('<p>No data for the selected date and button choice.</p>');
+            textField.val('');
           }
         } else {
           console.error(data.error);
@@ -152,6 +177,36 @@ $(function () {
         console.error(error);
       }
     });
+  }
+
+  // Function to set the button choice and update the button styles
+  function setButtonChoice(choice) {
+    document.getElementById('button_choice_input').value = choice;
+
+    // Remove 'active' class from all buttons
+    var buttons = document.getElementsByClassName('choice-btn');
+    for (var i = 0; i < buttons.length; i++) {
+      buttons[i].classList.remove('active');
+    }
+
+    // Add 'active' class to the clicked button (if not null)
+    var clickedButton = document.getElementById('btn-' + (choice ? choice.toLowerCase() : ''));
+    if (clickedButton) {
+      clickedButton.classList.add('active');
+    }
+  }
+
+  // Trigger AJAX request when button choice is clicked
+  $('.choice-btn').click(function() {
+    var buttonChoice = $(this).text();
+    setButtonChoice(buttonChoice);
+    handleButtonClick(buttonChoice);
+  });
+
+  // Trigger AJAX request when date is changed
+  $("#datetimepicker1").on("change.datetimepicker", function (e) {
+    var buttonChoice = document.getElementById('button_choice_input').value;
+    handleButtonClick(buttonChoice);
   });
 });
     </script>
